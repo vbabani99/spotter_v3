@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Vic's Pilot Spotter V3.0</title>
+  <title>Vic's Pilot Spotter V3.1</title>
   <style>
     :root{
       --bg:#050507;
@@ -480,9 +480,47 @@
     .launchShell .brandLogo{width:164px;height:74px}
     .pilotRow{display:block;margin-bottom:7px}
     .pilotRow .pilotSelect{min-height:44px;font-size:14px;font-weight:900}
-    .primaryActions{display:grid;grid-template-columns:1.35fr 1fr;gap:7px}
-    .primaryActions .voiceBtn,.primaryActions .infoBtn{min-height:44px;font-size:11px;border-radius:14px}
+    .primaryActions{display:grid;grid-template-columns:1.18fr .94fr .78fr;gap:7px}
+    .primaryActions .voiceBtn,.primaryActions .infoBtn,.primaryActions .giantBtn{min-height:44px;font-size:11px;border-radius:14px}
     .primaryActions .voiceBtn{font-size:12px}
+    .giantBtn{
+      padding:0 9px;min-width:0;border:1px solid var(--line);background:var(--chip);color:var(--text);
+      font-size:10px;font-weight:1000;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .giantBtn.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+
+    .giantLapOverlay{
+      position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;
+      padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+              calc(24px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+      background:#111;color:#fff;text-align:center;user-select:none;touch-action:manipulation;
+    }
+    .giantLapOverlay.on{display:flex}
+    .giantLapOverlay.good{background:#16a34a}
+    .giantLapOverlay.mid{background:#d4a900;color:#111}
+    .giantLapOverlay.bad{background:#dc2626}
+    .giantLapOverlay.critical{background:#dc2626;animation:giantCriticalBlink .24s steps(1,end) infinite}
+    .giantLapLabel{font-size:clamp(18px,5vw,34px);font-weight:1000;letter-spacing:.18em;text-transform:uppercase;opacity:.9}
+    .giantLapPilot{margin-top:8px;font-size:clamp(16px,4vw,30px);font-weight:1000;opacity:.94}
+    .giantLapTime{
+      margin-top:2vh;font-size:clamp(100px,31vw,330px);line-height:.82;font-weight:1000;
+      letter-spacing:-.065em;font-variant-numeric:tabular-nums;text-shadow:0 7px 24px rgba(0,0,0,.22);
+    }
+    .giantLapDelta{margin-top:3vh;font-size:clamp(18px,6vw,50px);font-weight:1000;font-variant-numeric:tabular-nums}
+    .giantLapHint{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));font-size:11px;font-weight:900;letter-spacing:.10em;opacity:.68}
+    @keyframes giantCriticalBlink{0%,49%{background:#ff0000}50%,100%{background:#650000}}
+    body.giant-lap-active{overflow:hidden}
+
+    body.is-huawei .voiceSelect{
+      -webkit-appearance:menulist!important;appearance:menulist!important;
+      background-image:none!important;padding-right:8px!important;
+    }
+    .voiceReloadBtn{
+      width:100%;min-height:34px;margin-top:7px;border-radius:13px;border:1px solid var(--line);
+      background:var(--chip);color:var(--text);font-size:10px;font-weight:1000;letter-spacing:.10em;
+      text-transform:uppercase;cursor:pointer;
+    }
     .main{padding:13px 12px 12px}
     .main .raceName{font-size:clamp(16px,4.2vw,24px);margin-bottom:7px}
     .main .pilotName{margin-bottom:4px}
@@ -512,7 +550,7 @@
     @media (max-width:420px){
       .controlBar{grid-template-columns:1fr auto auto auto auto; gap:6px}
       .pill,.voiceBtn,.infoBtn,.iconBtn,.pilotSelect,.voiceSelect{min-height:36px}
-      .primaryActions .voiceBtn,.primaryActions .infoBtn{min-height:44px}
+      .primaryActions .voiceBtn,.primaryActions .infoBtn,.primaryActions .giantBtn{min-height:44px}
       .voiceBtn{min-width:74px; padding:0 10px; font-size:10px}
       .infoBtn{min-width:66px; padding:0 8px; font-size:10px}
       .voiceSettings{grid-template-columns:1fr; gap:7px}
@@ -553,7 +591,7 @@
         <img class="brandLogo" src="https://i.ibb.co/wFx8B4mW/logo-vics-PT.gif" alt="Vic's Pulse Timing" />
         <div class="brandTag">
           <span class="brandLine">🎧 VIC'S PILOT SPOTTER 🐊 <span id="livePill" class="liveRadio off" aria-label="Estado de conexión">OFF</span></span>
-          <small>V3.0 · PILOTO</small>
+          <small>V3.1 · PILOTO</small>
         </div>
       </div>
 
@@ -563,6 +601,7 @@
       <div class="primaryActions">
         <button id="voiceBtn" class="voiceBtn" type="button">Voz OFF</button>
         <button id="infoBtn" class="infoBtn" type="button" aria-pressed="false" title="Mensajes extra">INFO OFF</button>
+        <button id="giantBtn" class="giantBtn" type="button" aria-pressed="false" title="Última vuelta a pantalla completa">GIANT</button>
       </div>
     </section>
 
@@ -600,6 +639,7 @@
             <div class="voiceField">
               <div class="voiceFieldLabel">Voz del Spotter</div>
               <select id="voiceSelect" class="voiceSelect"><option value="">Voz automática</option></select>
+              <button id="voiceReloadBtn" class="voiceReloadBtn" type="button">RECARGAR VOCES</button>
             </div>
             <div class="speedWrap">
               <div class="speedHead"><span>Velocidad</span><span id="speedValue" class="speedValue">1.20x</span></div>
@@ -628,24 +668,32 @@
     <div class="footer">VIC'S PILOT SPOTTER · FIREBASE</div>
   </div>
 
+  <div id="giantLapOverlay" class="giantLapOverlay" role="button" aria-label="Cerrar modo última vuelta gigante">
+    <div class="giantLapLabel">ÚLTIMA VUELTA</div>
+    <div id="giantLapPilot" class="giantLapPilot">SIN PILOTO</div>
+    <div id="giantLapTime" class="giantLapTime">--.--</div>
+    <div id="giantLapDelta" class="giantLapDelta">ESPERANDO VUELTA</div>
+    <div class="giantLapHint">TOCA LA PANTALLA PARA SALIR</div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script>
   (() => {
     'use strict';
     const APP_NAME='Vics_Pilot_Spotter_V3';
-    const APP_VERSION='V3.0';
+    const APP_VERSION='V3.1-GIANT-HUAWEI';
     const FIREBASE_CONFIG={apiKey:'AIzaSyBaySYvIxH8JsvXCETv3XwVdNecJY1ez2c',authDomain:'turbo-racing-zround.firebaseapp.com',projectId:'turbo-racing-zround',appId:'1:628478462576:web:c2dbc45c95bbe362ce42b5'};
     const FIRESTORE_DOC_PATH='races/currentRace';
-    const LS={pilot:'vps3_pilot',voice:'vps3_voice',voiceName:'vps3_voice_name',rate:'vps3_voice_rate',theme:'vps3_theme',tmv:'vps3_tmv_ms',tmvMargin:'vps3_tmv_margin_ms'};
+    const LS={pilot:'vps3_pilot',voice:'vps3_voice',voiceName:'vps3_voice_name',rate:'vps3_voice_rate',theme:'vps3_theme',tmv:'vps3_tmv_ms',tmvMargin:'vps3_tmv_margin_ms',giant:'vps3_giant_lap'};
     const THEMES=[
       {key:'theme-oled',label:'OLED'},{key:'theme-carbon-red',label:'Carbon Red'},{key:'theme-ice-blue',label:'Ice Blue'},
       {key:'theme-neon-lime',label:'Neon Lime'},{key:'theme-sunset-orange',label:'Sunset Orange'},{key:'theme-purple-night',label:'Purple Night'}
     ];
     const $=id=>document.getElementById(id);
-    const els={pilotSelect:$('pilotSelect'),themeBtn:$('themeBtn'),auditBtn:$('auditBtn'),voiceBtn:$('voiceBtn'),infoBtn:$('infoBtn'),voiceSelect:$('voiceSelect'),speedRange:$('speedRange'),speedValue:$('speedValue'),tmvInput:$('tmvInput'),tmvMargin:$('tmvMargin'),tmvHint:$('tmvHint'),voiceStatus:$('voiceStatus'),livePill:$('livePill'),themeHint:$('themeHint'),raceName:$('raceName'),pilotName:$('pilotName'),lastLap:$('lastLap'),note:$('note'),spotterAlert:$('spotterAlert'),positionValue:$('positionValue'),lapsValue:$('lapsValue'),gapAheadValue:$('gapAheadValue'),gapBehindValue:$('gapBehindValue'),remainingValue:$('remainingValue'),bestValue:$('bestValue'),paceValue:$('paceValue'),meanValue:$('meanValue'),totalValue:$('totalValue'),modeValue:$('modeValue'),remainingMini:$('remainingMini'),feedAge:$('feedAge'),debriefCard:$('debriefCard'),debriefTrend:$('debriefTrend'),debriefMain:$('debriefMain'),debriefAdvice:$('debriefAdvice')};
+    const els={pilotSelect:$('pilotSelect'),themeBtn:$('themeBtn'),auditBtn:$('auditBtn'),voiceBtn:$('voiceBtn'),infoBtn:$('infoBtn'),giantBtn:$('giantBtn'),giantLapOverlay:$('giantLapOverlay'),giantLapPilot:$('giantLapPilot'),giantLapTime:$('giantLapTime'),giantLapDelta:$('giantLapDelta'),voiceSelect:$('voiceSelect'),voiceReloadBtn:$('voiceReloadBtn'),speedRange:$('speedRange'),speedValue:$('speedValue'),tmvInput:$('tmvInput'),tmvMargin:$('tmvMargin'),tmvHint:$('tmvHint'),voiceStatus:$('voiceStatus'),livePill:$('livePill'),themeHint:$('themeHint'),raceName:$('raceName'),pilotName:$('pilotName'),lastLap:$('lastLap'),note:$('note'),spotterAlert:$('spotterAlert'),positionValue:$('positionValue'),lapsValue:$('lapsValue'),gapAheadValue:$('gapAheadValue'),gapBehindValue:$('gapBehindValue'),remainingValue:$('remainingValue'),bestValue:$('bestValue'),paceValue:$('paceValue'),meanValue:$('meanValue'),totalValue:$('totalValue'),modeValue:$('modeValue'),remainingMini:$('remainingMini'),feedAge:$('feedAge'),debriefCard:$('debriefCard'),debriefTrend:$('debriefTrend'),debriefMain:$('debriefMain'),debriefAdvice:$('debriefAdvice')};
 
-    const state={voiceOn:false,infoOn:false,speechUnlocked:false,voiceName:'',voiceRate:1.2,voices:[],voiceSignature:'',voiceRefreshTimers:[],voiceRefreshBusy:false,rows:[],selectedPilotKey:'',raceName:'',session:{type:'UNKNOWN',durationMs:0,label:'--'},snapshotSeq:0,lastSnapshotAt:0,baselineReady:false,pilotPrev:null,rowPrev:new Map(),lastPassEvents:new Map(),lastBlueAt:0,clockMarks:new Set(),finished:false,queue:[],speaking:false,current:null,speechGeneration:0,wakeLock:null,wakeTick:null,theme:'theme-purple-night',firestore:null,unsub:null,pollTimer:null,pollInFlight:false,transportMode:'CONNECT',firstSnapshotSeen:false,audit:[],tmvMs:0,tmvMarginMs:50,tmvNearStreak:0,tmvZoneActive:false,lastTmvAlertLap:0,lastTmvAlertAt:0,lapHistory:[],debrief:null,lastInfoLap:0,lastPositionReminderLap:0,lastTrendClass:'',lastTrendAt:0};
+    const state={voiceOn:false,infoOn:false,speechUnlocked:false,voiceName:'',voiceRate:1.2,voices:[],voiceSignature:'',voiceRefreshTimers:[],voiceRefreshBusy:false,rows:[],selectedPilotKey:'',raceName:'',session:{type:'UNKNOWN',durationMs:0,label:'--'},snapshotSeq:0,lastSnapshotAt:0,baselineReady:false,pilotPrev:null,rowPrev:new Map(),lastPassEvents:new Map(),lastBlueAt:0,clockMarks:new Set(),finished:false,queue:[],speaking:false,current:null,speechGeneration:0,wakeLock:null,wakeTick:null,theme:'theme-purple-night',firestore:null,unsub:null,pollTimer:null,pollInFlight:false,transportMode:'CONNECT',firstSnapshotSeen:false,audit:[],tmvMs:0,tmvMarginMs:50,tmvNearStreak:0,tmvZoneActive:false,lastTmvAlertLap:0,lastTmvAlertAt:0,lapHistory:[],debrief:null,lastInfoLap:0,lastPositionReminderLap:0,lastTrendClass:'',lastTrendAt:0,giantOn:false,giantTrend:'neutral',giantDeltaMs:0,voiceSelectActive:false,voiceRefreshPending:false,isHuawei:/HUAWEI|HONOR/i.test(navigator.userAgent||'')};
 
     const now=()=>Date.now();
     const safeName=v=>String(v||'').replace(/\s+/g,' ').trim();
@@ -727,8 +775,78 @@
 
     function setAlert(text,kind=''){els.spotterAlert.textContent=text||'SPOTTER EN ESPERA';els.spotterAlert.className='spotterAlert'+(kind?` ${kind}`:'')}
     function setLive(ok,label='OFF'){els.livePill.textContent=ok?(label&&label!=='OFF'?label:'LIVE'):label;els.livePill.classList.toggle('on',ok);els.livePill.classList.toggle('off',!ok)}
-    function applyTheme(key){state.theme=THEMES.some(t=>t.key===key)?key:'theme-purple-night';document.body.className=state.theme;els.themeHint.textContent=(THEMES.find(t=>t.key===state.theme)||{}).label||'';lsSet(LS.theme,state.theme)}
+    function applyTheme(key){state.theme=THEMES.some(t=>t.key===key)?key:'theme-purple-night';document.body.className=state.theme+(state.isHuawei?' is-huawei':'')+(state.giantOn?' giant-lap-active':'');els.themeHint.textContent=(THEMES.find(t=>t.key===state.theme)||{}).label||'';lsSet(LS.theme,state.theme)}
     function cycleTheme(){const i=THEMES.findIndex(t=>t.key===state.theme);applyTheme(THEMES[(i+1)%THEMES.length].key)}
+
+
+    const GIANT_STEADY_MS=100;
+
+    function setGiantUi(){
+      if(!els.giantBtn||!els.giantLapOverlay)return;
+      els.giantBtn.classList.toggle('on',state.giantOn);
+      els.giantBtn.setAttribute('aria-pressed',state.giantOn?'true':'false');
+      els.giantLapOverlay.classList.toggle('on',state.giantOn);
+      document.body.classList.toggle('giant-lap-active',state.giantOn);
+      if(state.giantOn){
+        const row=state.rows.find(r=>r.key===state.selectedPilotKey)||state.pilotPrev||null;
+        renderGiantLap(row,state.giantTrend,state.giantDeltaMs);
+      }
+    }
+
+    function toggleGiant(){
+      state.giantOn=!state.giantOn;
+      lsSet(LS.giant,state.giantOn?'1':'0');
+      setGiantUi();
+      audit('giant_mode',state.giantOn?'ON':'OFF');
+    }
+
+    function giantTrendFor(row,prev){
+      if(!row||!row.lastLapMs)return {kind:'neutral',deltaMs:0};
+
+      // TMV crítico tiene prioridad visual total.
+      const z=tmvProximity(row);
+      if(z&&z.critical)return {kind:'critical',deltaMs:z.deltaMs};
+
+      const prevLap=prev&&prev.lastLapMs?prev.lastLapMs:0;
+      if(!prevLap)return {kind:'neutral',deltaMs:0};
+
+      const delta=row.lastLapMs-prevLap;
+      if(Math.abs(delta)<=GIANT_STEADY_MS)return {kind:'mid',deltaMs:delta};
+      return delta<0?{kind:'good',deltaMs:delta}:{kind:'bad',deltaMs:delta};
+    }
+
+    function renderGiantLap(row,kind=state.giantTrend,deltaMs=state.giantDeltaMs){
+      if(!els.giantLapOverlay)return;
+
+      els.giantLapOverlay.classList.remove('good','mid','bad','critical');
+      if(['good','mid','bad','critical'].includes(kind))els.giantLapOverlay.classList.add(kind);
+
+      els.giantLapPilot.textContent=row?`${row.driverName}${row.driverNumber?` #${row.driverNumber}`:''}`:'SIN PILOTO';
+      els.giantLapTime.textContent=row&&row.lastLapMs?formatLapMs(row.lastLapMs):'--.--';
+
+      if(kind==='critical'){
+        const z=row?tmvProximity(row):null;
+        els.giantLapDelta.textContent=z?`⚠️ TMV +${z.deltaMs} ms`:'⚠️ TMV';
+      }else if(!row||!row.lastLapMs){
+        els.giantLapDelta.textContent='ESPERANDO VUELTA';
+      }else if(kind==='neutral'){
+        els.giantLapDelta.textContent='PRIMERA REFERENCIA';
+      }else if(kind==='mid'){
+        els.giantLapDelta.textContent=`SE MANTUVO · ${deltaMs>=0?'+':'−'}${(Math.abs(deltaMs)/1000).toFixed(3)} s`;
+      }else if(kind==='good'){
+        els.giantLapDelta.textContent=`MEJORÓ · −${(Math.abs(deltaMs)/1000).toFixed(3)} s`;
+      }else if(kind==='bad'){
+        els.giantLapDelta.textContent=`EMPEORÓ · +${(Math.abs(deltaMs)/1000).toFixed(3)} s`;
+      }
+    }
+
+    function updateGiantFromLap(row,prev){
+      const t=giantTrendFor(row,prev);
+      state.giantTrend=t.kind;
+      state.giantDeltaMs=t.deltaMs;
+      if(state.giantOn)renderGiantLap(row,t.kind,t.deltaMs);
+      audit('giant_lap',t.kind,{lap:row?.laps||0,lapMs:row?.lastLapMs||0,prevLapMs:prev?.lastLapMs||0,deltaMs:t.deltaMs});
+    }
 
     function speechAvailable(){return 'speechSynthesis'in window&&'SpeechSynthesisUtterance'in window}
     function clampRate(v){return clamp(Number(v)||1.2,1,2.5)}
@@ -748,7 +866,11 @@
         const sig=voicesSignature(found);
         const changed=sig!==state.voiceSignature;
         // No reconstruir el selector si Huawei entrega exactamente la misma lista.
-        if(changed){state.voices=found;state.voiceSignature=sig;populateVoices(false)}
+        if(changed){
+          state.voices=found;state.voiceSignature=sig;
+          if(state.voiceSelectActive)state.voiceRefreshPending=true;
+          else populateVoices(false);
+        }
         else state.voices=found;
         if(state.voices.length){
           const spanish=state.voices.filter(v=>/^es/i.test(v.lang)).length;
@@ -791,11 +913,12 @@
     }
     function scheduleVoiceRefreshes(reason='retry'){
       cancelVoiceRefreshes();
-      // V3: pocos intentos. Huawei suele publicar la lista tarde; no lo bombardeamos durante 12 s.
-      [0,350,1200,3000].forEach((ms,i)=>{
+      // V3.1: Huawei/HONOR puede publicar la lista varios segundos después del gesto.
+      const plan=state.isHuawei?[0,250,700,1500,3000,6000,10000,15000]:[0,350,1200,3000,6000];
+      plan.forEach((ms,i)=>{
         const timer=setTimeout(()=>{
           const voices=refreshVoices(`${reason}_${i}`);
-          if(voices.length&&i>=1)cancelVoiceRefreshes();
+          if(voices.length&&i>=1&&!state.isHuawei)cancelVoiceRefreshes();
         },ms);
         state.voiceRefreshTimers.push(timer);
       });
@@ -838,7 +961,7 @@
     async function toggleVoice(){state.voiceOn=!state.voiceOn;lsSet(LS.voice,state.voiceOn?'1':'0');els.voiceBtn.textContent=state.voiceOn?'Voz ON':'Voz OFF';els.voiceBtn.classList.toggle('on',state.voiceOn);if(state.voiceOn){state.speechUnlocked=true;try{speechSynthesis.resume()}catch{}requestWakeLock();scheduleVoiceRefreshes('voice_on');enqueueSpeech('Spotter listo.',{priority:100,key:'voice_ready',ttl:3500,kind:'system',interrupt:true})}else{state.speechGeneration++;cancelVoiceRefreshes();try{speechSynthesis.cancel()}catch{}state.queue=[];state.speaking=false;state.current=null;setVoiceStatus('VOZ APAGADA','warn')}}
     async function requestWakeLock(){if(!('wakeLock'in navigator)||document.hidden)return;try{if(!state.wakeLock)state.wakeLock=await navigator.wakeLock.request('screen')}catch{}}
 
-    function resetBaseline(reason='reset'){const keepDebrief=reason==='race_change'||reason==='counter_reset';state.baselineReady=false;state.pilotPrev=null;state.rowPrev=new Map();state.lastPassEvents=new Map();state.clockMarks=new Set();state.finished=false;state.lastBlueAt=0;state.tmvNearStreak=0;state.tmvZoneActive=false;state.lastTmvAlertLap=0;state.lastTmvAlertAt=0;state.lapHistory=[];state.debrief=null;state.lastInfoLap=0;state.lastPositionReminderLap=0;state.lastTrendClass='';state.lastTrendAt=0;if(els.debriefCard)els.debriefCard.hidden=true;state.queue=keepDebrief?state.queue.filter(x=>x.kind==='debrief'):[];audit('baseline_reset',reason,{keepDebrief})}
+    function resetBaseline(reason='reset'){const keepDebrief=reason==='race_change'||reason==='counter_reset';state.baselineReady=false;state.pilotPrev=null;state.rowPrev=new Map();state.lastPassEvents=new Map();state.clockMarks=new Set();state.finished=false;state.lastBlueAt=0;state.tmvNearStreak=0;state.tmvZoneActive=false;state.lastTmvAlertLap=0;state.lastTmvAlertAt=0;state.lapHistory=[];state.debrief=null;state.lastInfoLap=0;state.lastPositionReminderLap=0;state.lastTrendClass='';state.lastTrendAt=0;state.giantTrend='neutral';state.giantDeltaMs=0;if(state.giantOn)renderGiantLap(null,'neutral',0);if(els.debriefCard)els.debriefCard.hidden=true;state.queue=keepDebrief?state.queue.filter(x=>x.kind==='debrief'):[];audit('baseline_reset',reason,{keepDebrief})}
     function populatePilotSelect(rows){const wanted=state.selectedPilotKey||lsGet(LS.pilot,'');const html=['<option value="">Selecciona piloto</option>',...rows.map(r=>`<option value="${r.key.replaceAll('"','&quot;')}"${r.key===wanted?' selected':''}>${r.label}</option>`)].join('');els.pilotSelect.innerHTML=html;state.selectedPilotKey=els.pilotSelect.value||''}
 
     function gapText(a,b){if(!a||!b)return'-';const lapDiff=(a.laps||0)-(b.laps||0);if(lapDiff!==0)return `${Math.abs(lapDiff)}V`;const d=Math.abs((a.totalMs||0)-(b.totalMs||0));return d>0&&d<60000?`${(d/1000).toFixed(2)}s`:'-'}
@@ -930,6 +1053,7 @@
       if(state.infoOn&&dur>0&&rem!=null){for(const mark of [60000,30000,10000]){if(dur>mark&&prev.totalMs<dur-mark&&row.totalMs>=dur-mark&&!state.clockMarks.has(mark)){state.clockMarks.add(mark);const txt=mark===60000?'Un minuto.':mark===30000?'Treinta segundos.':'Diez segundos.';const pri=mark===10000?97:mark===30000?95:94;setAlert(`⏱ ${txt.toUpperCase()}`,'warn');enqueueSpeech(txt,{priority:pri,key:`clock_${mark}_${state.raceName}`,ttl:3500,kind:'info',interrupt:mark===10000})}}}
       if(newLap){
         recordLap(row);
+        updateGiantFromLap(row,prev);
         const tmvAlerted=maybeTmvProximityAlert(row);
         const lapTxt=lapSpeech(row.lastLapMs);
         if(!tmvAlerted)setAlert(pb?'🟣 MEJOR VUELTA':`VUELTA ${row.laps}`,pb?'info':'');
@@ -1061,9 +1185,32 @@
       }catch(e){audit('firebase_connect_error',String(e));setLive(false,'ERROR')}
     }
 
-    function bind(){els.voiceBtn.addEventListener('click',toggleVoice);els.infoBtn.addEventListener('click',toggleInfo);els.themeBtn.addEventListener('click',cycleTheme);els.auditBtn.addEventListener('click',downloadAudit);els.tmvInput.addEventListener('change',()=>{state.tmvMs=parseTmvInput(els.tmvInput.value.trim());els.tmvInput.value=formatTmvInput(state.tmvMs);lsSet(LS.tmv,state.tmvMs||'');resetTmvProximity('tmv_change');updateTmvUi();audit('tmv_changed',state.tmvMs?formatLapMs(state.tmvMs):'OFF',{tmvMs:state.tmvMs,marginMs:state.tmvMarginMs})});els.tmvInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();els.tmvInput.blur()}});els.tmvMargin.addEventListener('change',()=>{state.tmvMarginMs=[50,75,100].includes(Number(els.tmvMargin.value))?Number(els.tmvMargin.value):50;lsSet(LS.tmvMargin,state.tmvMarginMs);resetTmvProximity('tmv_margin_change');updateTmvUi();audit('tmv_margin_changed',`${state.tmvMarginMs} ms`)});els.pilotSelect.addEventListener('change',()=>{state.selectedPilotKey=els.pilotSelect.value||'';lsSet(LS.pilot,state.selectedPilotKey);resetBaseline('pilot_change');render(state.rows.find(r=>r.key===state.selectedPilotKey)||null);if(state.voiceOn&&state.selectedPilotKey){const r=state.rows.find(x=>x.key===state.selectedPilotKey);if(r)enqueueSpeech(`Piloto ${r.driverName}, listo.`,{priority:98,key:'pilot_select',ttl:3000,kind:'system',interrupt:true})}});els.voiceSelect.addEventListener('change',async()=>{state.voiceName=els.voiceSelect.value||'';lsSet(LS.voiceName,state.voiceName);await primeSpeechEngine();const v=pickVoice();setVoiceStatus(v?`VOZ: ${v.name} · ${v.lang}`:'VOZ AUTOMÁTICA DEL SISTEMA',v?'ok':'warn');if(state.voiceOn){state.speechGeneration++;try{speechSynthesis.cancel()}catch{}state.speaking=false;state.current=null;enqueueSpeech('Prueba de voz.',{priority:100,key:'voice_test',ttl:3500,kind:'system',interrupt:true})}});els.speedRange.addEventListener('input',()=>{state.voiceRate=clampRate(els.speedRange.value);els.speedValue.textContent=`${state.voiceRate.toFixed(1)}x`});els.speedRange.addEventListener('change',()=>lsSet(LS.rate,state.voiceRate));document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshVoices('visible');if(state.voiceOn)requestWakeLock()}});let voiceGesturePrimed=false;['pointerdown','touchstart','click'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target&&e.target.closest&&e.target.closest('#voiceBtn'))return;if(!voiceGesturePrimed){voiceGesturePrimed=true;primeSpeechEngine();scheduleVoiceRefreshes('first_gesture')}if(state.voiceOn&&!state.speechUnlocked)unlockSpeech()},{passive:true,capture:true}));if(speechAvailable()){scheduleVoiceRefreshes('startup');try{speechSynthesis.addEventListener('voiceschanged',()=>refreshVoices('voiceschanged'))}catch{try{speechSynthesis.onvoiceschanged=()=>refreshVoices('voiceschanged_prop')}catch{}}}else{setVoiceStatus('ESTE NAVEGADOR NO SOPORTA VOZ','bad')}window.addEventListener('online',()=>{audit('network_online','browser');if(!state.lastSnapshotAt||now()-state.lastSnapshotAt>3000)pollOnce('browser_online')});window.addEventListener('offline',()=>{audit('network_offline','browser');setLive(false,'OFFLINE')});setInterval(()=>{const age=state.lastSnapshotAt?now()-state.lastSnapshotAt:0;els.feedAge.textContent=age?`${(age/1000).toFixed(1)}s`:'--';if(navigator.onLine===false)setLive(false,'OFFLINE');else if(age>9000)setLive(false,'LENTO')},1000)}
+    function bind(){
+      els.voiceBtn.addEventListener('click',toggleVoice);
+      els.infoBtn.addEventListener('click',toggleInfo);
+      els.giantBtn.addEventListener('click',toggleGiant);
+      els.giantLapOverlay.addEventListener('click',()=>{if(state.giantOn)toggleGiant()});
 
-    function init(){state.infoOn=false;state.selectedPilotKey=lsGet(LS.pilot,'');state.voiceOn=lsGet(LS.voice,'0')==='1';state.voiceName=lsGet(LS.voiceName,'');state.voiceRate=clampRate(lsGet(LS.rate,'1.2'));state.tmvMs=Math.max(0,Math.round(Number(lsGet(LS.tmv,'0'))||0));state.tmvMarginMs=[50,75,100].includes(Number(lsGet(LS.tmvMargin,'50')))?Number(lsGet(LS.tmvMargin,'50')):50;applyTheme(lsGet(LS.theme,'theme-purple-night'));els.voiceBtn.textContent=state.voiceOn?'Voz ON':'Voz OFF';els.voiceBtn.classList.toggle('on',state.voiceOn);els.speedRange.value=String(state.voiceRate);els.speedValue.textContent=`${state.voiceRate.toFixed(1)}x`;els.tmvInput.value=formatTmvInput(state.tmvMs);els.tmvMargin.value=String(state.tmvMarginMs);updateTmvUi();setInfoUi();updatePrivateControls(null);bind();connect();if(state.voiceOn)setVoiceStatus('TOCA LA PANTALLA PARA ACTIVAR VOZ','warn');audit('app_init',APP_VERSION,{tmvMs:state.tmvMs,tmvMarginMs:state.tmvMarginMs,infoOn:state.infoOn,debrief:true})}
+      if(els.voiceReloadBtn)els.voiceReloadBtn.addEventListener('click',async()=>{
+        setVoiceStatus('BUSCANDO VOCES…','warn');
+        await primeSpeechEngine();
+        scheduleVoiceRefreshes('manual_reload');
+      });
+
+      els.voiceSelect.addEventListener('focus',()=>{state.voiceSelectActive=true});
+      els.voiceSelect.addEventListener('pointerdown',()=>{state.voiceSelectActive=true});
+      els.voiceSelect.addEventListener('touchstart',()=>{state.voiceSelectActive=true},{passive:true});
+      els.voiceSelect.addEventListener('blur',()=>{
+        state.voiceSelectActive=false;
+        if(state.voiceRefreshPending){
+          state.voiceRefreshPending=false;
+          populateVoices(false);
+        }
+      });
+
+      els.themeBtn.addEventListener('click',cycleTheme);els.auditBtn.addEventListener('click',downloadAudit);els.tmvInput.addEventListener('change',()=>{state.tmvMs=parseTmvInput(els.tmvInput.value.trim());els.tmvInput.value=formatTmvInput(state.tmvMs);lsSet(LS.tmv,state.tmvMs||'');resetTmvProximity('tmv_change');updateTmvUi();audit('tmv_changed',state.tmvMs?formatLapMs(state.tmvMs):'OFF',{tmvMs:state.tmvMs,marginMs:state.tmvMarginMs})});els.tmvInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();els.tmvInput.blur()}});els.tmvMargin.addEventListener('change',()=>{state.tmvMarginMs=[50,75,100].includes(Number(els.tmvMargin.value))?Number(els.tmvMargin.value):50;lsSet(LS.tmvMargin,state.tmvMarginMs);resetTmvProximity('tmv_margin_change');updateTmvUi();audit('tmv_margin_changed',`${state.tmvMarginMs} ms`)});els.pilotSelect.addEventListener('change',()=>{state.selectedPilotKey=els.pilotSelect.value||'';lsSet(LS.pilot,state.selectedPilotKey);resetBaseline('pilot_change');render(state.rows.find(r=>r.key===state.selectedPilotKey)||null);if(state.voiceOn&&state.selectedPilotKey){const r=state.rows.find(x=>x.key===state.selectedPilotKey);if(r)enqueueSpeech(`Piloto ${r.driverName}, listo.`,{priority:98,key:'pilot_select',ttl:3000,kind:'system',interrupt:true})}});els.voiceSelect.addEventListener('change',async()=>{state.voiceName=els.voiceSelect.value||'';lsSet(LS.voiceName,state.voiceName);await primeSpeechEngine();const v=pickVoice();setVoiceStatus(v?`VOZ: ${v.name} · ${v.lang}`:'VOZ AUTOMÁTICA DEL SISTEMA',v?'ok':'warn');if(state.voiceOn){state.speechGeneration++;try{speechSynthesis.cancel()}catch{}state.speaking=false;state.current=null;enqueueSpeech('Prueba de voz.',{priority:100,key:'voice_test',ttl:3500,kind:'system',interrupt:true})}});els.speedRange.addEventListener('input',()=>{state.voiceRate=clampRate(els.speedRange.value);els.speedValue.textContent=`${state.voiceRate.toFixed(1)}x`});els.speedRange.addEventListener('change',()=>lsSet(LS.rate,state.voiceRate));document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshVoices('visible');if(state.voiceOn)requestWakeLock()}});let voiceGesturePrimed=false;['pointerdown','touchstart','click'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target&&e.target.closest&&e.target.closest('#voiceBtn'))return;if(!voiceGesturePrimed){voiceGesturePrimed=true;primeSpeechEngine();scheduleVoiceRefreshes('first_gesture')}if(state.voiceOn&&!state.speechUnlocked)unlockSpeech()},{passive:true,capture:true}));if(speechAvailable()){scheduleVoiceRefreshes('startup');try{speechSynthesis.addEventListener('voiceschanged',()=>refreshVoices('voiceschanged'))}catch{try{speechSynthesis.onvoiceschanged=()=>refreshVoices('voiceschanged_prop')}catch{}}}else{setVoiceStatus('ESTE NAVEGADOR NO SOPORTA VOZ','bad')}window.addEventListener('online',()=>{audit('network_online','browser');if(!state.lastSnapshotAt||now()-state.lastSnapshotAt>3000)pollOnce('browser_online')});window.addEventListener('offline',()=>{audit('network_offline','browser');setLive(false,'OFFLINE')});setInterval(()=>{const age=state.lastSnapshotAt?now()-state.lastSnapshotAt:0;els.feedAge.textContent=age?`${(age/1000).toFixed(1)}s`:'--';if(navigator.onLine===false)setLive(false,'OFFLINE');else if(age>9000)setLive(false,'LENTO')},1000)}
+
+    function init(){state.infoOn=false;state.giantOn=lsGet(LS.giant,'0')==='1';state.selectedPilotKey=lsGet(LS.pilot,'');state.voiceOn=lsGet(LS.voice,'0')==='1';state.voiceName=lsGet(LS.voiceName,'');state.voiceRate=clampRate(lsGet(LS.rate,'1.2'));state.tmvMs=Math.max(0,Math.round(Number(lsGet(LS.tmv,'0'))||0));state.tmvMarginMs=[50,75,100].includes(Number(lsGet(LS.tmvMargin,'50')))?Number(lsGet(LS.tmvMargin,'50')):50;applyTheme(lsGet(LS.theme,'theme-purple-night'));if(state.isHuawei)document.body.classList.add('is-huawei');els.voiceBtn.textContent=state.voiceOn?'Voz ON':'Voz OFF';els.voiceBtn.classList.toggle('on',state.voiceOn);els.speedRange.value=String(state.voiceRate);els.speedValue.textContent=`${state.voiceRate.toFixed(1)}x`;els.tmvInput.value=formatTmvInput(state.tmvMs);els.tmvMargin.value=String(state.tmvMarginMs);updateTmvUi();setInfoUi();setGiantUi();updatePrivateControls(null);bind();connect();if(state.voiceOn)setVoiceStatus(state.isHuawei?'HUAWEI · TOCA RECARGAR VOCES SI NO APARECEN':'TOCA LA PANTALLA PARA ACTIVAR VOZ','warn');audit('app_init',APP_VERSION,{tmvMs:state.tmvMs,tmvMarginMs:state.tmvMarginMs,infoOn:state.infoOn,giantOn:state.giantOn,isHuawei:state.isHuawei,debrief:true})}
     init();
   })();
   </script>
